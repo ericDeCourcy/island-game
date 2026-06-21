@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>GIF Tiles</title>
+<style>
+  body {
+    margin: 0;
+    background: #ffffff;
+  }
+  #stage {
+    position: relative; /* tiles position relative to this */
+  }
+  .tile {
+    position: absolute;
+    image-rendering: pixelated; /* keep pixel art crisp */
+  }
+</style>
+</head>
+<body>
+
+  <div id="stage"></div>
+
+  <script src="buffer.js"></script>
+  <script>
+    // Each entry: x/y = pixel position on the page, src = path to the gif.
+    // Add as many as you want.
+    /*
+    const tiles = [
+      { x: 0,   y: 0,   src: 'sample.gif' },
+      { x: 100, y: 0,   src: 'sample.gif' },
+      { x: 0,   y: 100, src: 'sample.gif' },
+      { x: 100, y: 100, src: 'sample.gif' },
+    ];
+    */
+    const tiles = window.buffer;
+    console.log(tiles);
+    const stage = document.getElementById('stage');
+
+    for (const tileRow of tiles) {
+      for (const tile of tileRow) {
+        const img = document.createElement('img');
+        img.src = tile.src;
+        img.className = 'tile';
+        img.style.left = tile.x + 'px';
+        img.style.top = tile.y + 'px';
+        stage.appendChild(img);
+      }
+    }
+  </script>
+
+</body>
+</html>
