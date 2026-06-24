@@ -35,6 +35,8 @@ contract TicketMachine is ERC20Upgradeable, ReentrancyGuard{
         {
             lastPrice = lastPrice * priceIncreaseFactor / SCALAR;
             total+=lastPrice;
+                        // TODO put a cap price so this doesn't go exponential crazy mode
+
         }
 
         // if wethLimit == 0 that means using ETH
@@ -43,7 +45,6 @@ contract TicketMachine is ERC20Upgradeable, ReentrancyGuard{
         {
             require(msg.value >= total, "TicketMachine: ETH payment not enough");
             refund = msg.value - total;    //must use msg.value so that people can't steal ETH from this contract
-            //.send, .transfer, what? Whats best?
         }
         else
         {
