@@ -42,8 +42,9 @@ contract TicketMachineTest is Test {
         assertEq(ticketMachine.symbol(), "TICKET");
     }
 
+// TODO: consider removing this. Originally 100 tickets were minted to the owner, now its 0
     function test_deployment_ownerReceivesInitialTickets() public view {
-        assertEq(ticketMachine.balanceOf(owner), 100);
+        assertEq(ticketMachine.balanceOf(owner), 0);
     }
 
     function test_deployment_ownerIsSet() public view {
@@ -51,7 +52,7 @@ contract TicketMachineTest is Test {
     }
 
     function test_deployment_totalSupply() public view {
-        assertEq(ticketMachine.totalSupply(), 100);
+        assertEq(ticketMachine.totalSupply(), 0);
     }
 
     function test_deployment_implementationInitializersDisabled() public {
@@ -116,4 +117,23 @@ contract TicketMachineTest is Test {
         vm.expectRevert("TicketMachine: wethLimit reached");
         ticketMachine.buyTicket(user, 1, 1 wei); // wethLimit way too low
     }
+
+    function test_ownerMint() public {
+        vm.prank(owner);
+        ticketMachine.ownerMint(10);
+        assertEq(ticketMachine.balanceOf(owner), 10);
+    }
+
+    function test_ownerMint_fails_nonOwner() public {
+        vm.prank(user);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", user));
+        ticketMachine.ownerMint(10);
+    }
+
+    function test_ownerMint_failsWhenExceeding() public {
+        vm.prank(owner);
+        vm.expectRevert("TicketMachine: max owner mints exceeded");
+        ticketMachine.ownerMint(10001); 
+    }
+
 }

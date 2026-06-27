@@ -17,6 +17,9 @@ contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgr
     uint constant SCALAR = 1e18;
     address TREASURY;
     IWETH9 weth;    //this is the address on OPTIMISM!
+    uint maxPrice;
+    uint numOwnerMints;
+    uint maxOwnerMints;
 
     constructor() {
         _disableInitializers();
@@ -25,12 +28,20 @@ contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgr
     function initialize(address owner, address treasury) public initializer {
         __Ownable_init(owner);
         __ERC20_init("LandNFT Tickets", "TICKET");
-        _mint(owner, 100);
         TREASURY = treasury;
     
         lastPrice = 1e16;
         priceIncreaseFactor = 1_002_500e12; // 100.25% in e18
         weth =  IWETH9(0x4200000000000000000000000000000000000006);
+        maxPrice = 5 ether;
+        maxOwnerMints = 1000;
+    }
+
+    function getPrice() public view returns(uint price)
+    {
+        uint thisPrice = lastPrice * priceIncreaseFactor / SCALAR;
+        if(thisPrice > maxPrice) { thisPrice = maxPrice; }
+        return thisPrice;
     }
 
     // @dev if wethLimit == 0, this means they are paying with native eth 
@@ -43,9 +54,9 @@ contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgr
         {
             uint thisPrice = lastPrice * priceIncreaseFactor / SCALAR;
 
-            if(thisPrice > 5 ether)
+            if(thisPrice > maxPrice)
             {
-                thisPrice = 5 ether;
+                thisPrice = maxPrice;
             }
 
             total+=thisPrice;
@@ -82,8 +93,13 @@ contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgr
         }
     }
 
-    // ensure contract gives minter privileges to some admin address
-    // ensure some amount of tickets can be minted
-    // ensure upgrades work - test state is not moved
-    // 
+    // TODO add tests for this
+        // make sure it works
+        // make sure it fails after the max number of mints fails
+    function ownerMint(uint number) public onlyOwner
+    {
+        require(numOwnerMints + number <= maxOwnerMints, "TicketMachine: max owner mints exceeded");
+        _mint(owner(), number);
+        numOwnerMints += number;
+    }
 }

@@ -10,7 +10,17 @@ import "./IWETH9.sol";
 contract Treasury is OwnableUpgradeable {
 
     // TODO initializers and constructors
-    IWETH9 weth =  IWETH9(0x4200000000000000000000000000000000000006);    //this is the address on OPTIMISM!
+    IWETH9 weth;    
+
+    // @dev Needed to prevent the implementation from getting initialized
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address owner) public initializer {
+        __Ownable_init(owner);
+        weth =  IWETH9(0x4200000000000000000000000000000000000006); //This is the WETH address on Optimism
+    }
 
 
     //* @dev amount == 0 codes for full withdrawal
