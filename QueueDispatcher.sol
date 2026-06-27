@@ -7,6 +7,12 @@ contract QueueDispatcher {
         _addToCurrentQueue(worldId);
     }
 
+    // proves the queue doesn't exist so we can't get stuck waiting for it
+    function proveQueueDNE(uint queueId) public returns(bool DNE)
+    {
+        if(block.timestamp / QUEUE_EPOCH )
+    }
+
 
     // For addToQueue //////////////
     function _inQueue(uint worldId) returns (uint queueNumber)
@@ -23,5 +29,7 @@ contract QueueDispatcher {
         queueLengths++; 
     }
     //////////////////////////////
+
+
 
 }

@@ -2,18 +2,21 @@ pragma solidity ^0.8.35;
 
 // ticket redemption functions
 // is ERC721
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract TicketMachine is ERC20Upgradeable, ReentrancyGuard{
+import "./IWETH9.sol";
+
+contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgradeable{
 
     uint lastPrice = 1e16;
     uint priceIncreaseFactor = 1_002_500e12; // 100.25% in e18
     uint constant SCALAR = 1e18;
-    uint TREASURY;
-    uint constant WETH = 0x4200000000000000000000000000000000000006;    //this is the address on OPTIMISM!
+    address TREASURY;
+    IWETH9 weth =  IWETH9(0x4200000000000000000000000000000000000006);    //this is the address on OPTIMISM!
 
     constructor() {
         _disableInitializers();
@@ -26,17 +29,22 @@ contract TicketMachine is ERC20Upgradeable, ReentrancyGuard{
     }
 
     // @dev if wethLimit == 0, this means they are paying with native eth 
-    function buyTicket(uint owner, uint number, uint wethLimit) public nonReentrant
+    function buyTicket(address recipient, uint number, uint wethLimit) public payable nonReentrant
     {
         uint total = 0;
         uint refund = 0;
 
-        for(i = 0; i < number; i++)
+        for(uint i = 0; i < number; i++)
         {
-            lastPrice = lastPrice * priceIncreaseFactor / SCALAR;
-            total+=lastPrice;
-                        // TODO put a cap price so this doesn't go exponential crazy mode
+            uint thisPrice = lastPrice * priceIncreaseFactor / SCALAR;
 
+            if(thisPrice > 5 ether)
+            {
+                thisPrice = 5 ether;
+            }
+
+            total+=thisPrice;
+            lastPrice = thisPrice;
         }
 
         // if wethLimit == 0 that means using ETH
@@ -49,17 +57,23 @@ contract TicketMachine is ERC20Upgradeable, ReentrancyGuard{
         else
         {
             require(wethLimit >= total, "TicketMachine: wethLimit reached");
-            require(weth.transferFrom(msg.sender, TREASURY, total, "TicketMachine: weth trasferFrom failed"));
+            require(weth.transferFrom(msg.sender, TREASURY, total), "TicketMachine: weth trasferFrom failed");
         }
 
         // mint user their tickets
-        _mint(number, owner);
+        _mint(recipient, number);
 
-        // if native eth was transferred, do refund last for check-effect-interaction pattern
+        // if native eth was transferred, convert to weth and send to treasury.
+        // since weth payable amount is determined when tx sent, refund unused funds to the user
+        // do refund last for check-effect-interaction pattern
         if(wethLimit == 0)
-        {
-            (bool success, ) = TREASURY.call{value: (address(this).balance - refund)}("");    //this gets any extra ETH accidentally sent to contract
-            (bool success_2, ) = msg.sender.call{value: refund}("");   
+        {        
+            uint thisAmount = address(this).balance - refund;   // this gets any stray ETH in the contract as well
+            weth.deposit{value: thisAmount}(); //deposit into the WETH contract    
+            weth.transfer(TREASURY, thisAmount);
+
+            (bool success, ) = msg.sender.call{value: refund}("");   
+            require(success, "TicketMachine: failure in transferring refund");
         }
     }
 

@@ -1,0 +1,37 @@
+/// This file is intended to be a checklist so sensitive security items aren't forgotten
+
+# Test Suite
+- [ ] Test applying versioning bumps for the island NFTS
+    - [ ] patch (still compatible, just update contract functionality)
+    - [ ] minor version
+        - [ ] Assure users can still move from the previous minor version to the next. They should be able to upgrade their NFTs if they choose
+    - [ ] major version - what does this even look like? Some kind of breaking change thats more serious than an opt-in update?
+- [ ] Test minting tickets
+- [ ] test minting NFTs from tickets
+- [ ] test price cap functionality
+
+## Admin actions
+- [ ] Test owner can transfer ownership to another account
+- [ ] Test owner can mint tickets to himself whenever
+- [ ] Check that non-admins cannot do admin actions (consider applying all admin items to each "ownable" contract so we don't forget certain checks)
+
+## Ticket machine
+- [ ] Test purchasing tickets
+- [ ] Test transferring funds
+- [ ] Test refunds
+- [ ] test not enough funds
+- [ ] test treasury, ensure funds can be transferred out
+
+## LandNFT contract
+- [ ] Test that transferFrom will fail if the user has no tickets
+
+# Manual review
+- [ ] Fully understand the reasons why ERC721Enumerable and ERC721Consecutive (and others) are incompatible
+    - Understand the differences in the `_update` and `_ownerOf` functions
+- [ ] Check any upgradeable contracts to ensure that
+    - [ ] Storage layout is ok
+    - [ ] Disable initializers and stuff is also fine
+    - [ ] Constructors or anything else are handled
+    - [ ] Initializers/initializable
+- [ ] Make sure the tests handle all relevant cases. Often multiple instances of the same thing might get mised
+- [ ] Check import paths and inheritance to make sure everything is in correct order
