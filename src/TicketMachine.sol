@@ -12,11 +12,11 @@ import "./IWETH9.sol";
 
 contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgradeable{
 
-    uint lastPrice = 1e16;
-    uint priceIncreaseFactor = 1_002_500e12; // 100.25% in e18
+    uint public lastPrice;
+    uint priceIncreaseFactor; 
     uint constant SCALAR = 1e18;
     address TREASURY;
-    IWETH9 weth =  IWETH9(0x4200000000000000000000000000000000000006);    //this is the address on OPTIMISM!
+    IWETH9 weth;    //this is the address on OPTIMISM!
 
     constructor() {
         _disableInitializers();
@@ -24,8 +24,13 @@ contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgr
 
     function initialize(address owner, address treasury) public initializer {
         __Ownable_init(owner);
+        __ERC20_init("LandNFT Tickets", "TICKET");
         _mint(owner, 100);
         TREASURY = treasury;
+    
+        lastPrice = 1e16;
+        priceIncreaseFactor = 1_002_500e12; // 100.25% in e18
+        weth =  IWETH9(0x4200000000000000000000000000000000000006);
     }
 
     // @dev if wethLimit == 0, this means they are paying with native eth 

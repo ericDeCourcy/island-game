@@ -21,6 +21,7 @@
 - [ ] Test refunds
 - [ ] test not enough funds
 - [ ] test treasury, ensure funds can be transferred out
+- [ ] Set decimals to 0 or ensure they are set to 0
 
 ## LandNFT contract
 - [ ] Test that transferFrom will fail if the user has no tickets
@@ -30,8 +31,9 @@
     - Understand the differences in the `_update` and `_ownerOf` functions
 - [ ] Check any upgradeable contracts to ensure that
     - [ ] Storage layout is ok
-    - [ ] Disable initializers and stuff is also fine
-    - [ ] Constructors or anything else are handled
-    - [ ] Initializers/initializable
+    - [ ] All initializers are handled or disabled
+    - [ ] Constructors are used everywhere needed
 - [ ] Make sure the tests handle all relevant cases. Often multiple instances of the same thing might get mised
 - [ ] Check import paths and inheritance to make sure everything is in correct order
+- [ ] Ensure any upgradeable contracts are not declaring variables within their implementations or constructions
+    - This means doing something like `SCALAR = 1e18` - unless its a constant (i think)
