@@ -33,7 +33,7 @@ contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgr
         lastPrice = 1e16;
         priceIncreaseFactor = 1_002_500e12; // 100.25% in e18
         weth =  IWETH9(0x4200000000000000000000000000000000000006);
-        maxPrice = 5 ether;
+        maxPrice = 0.1 ether;
         maxOwnerMints = 1000;
     }
 
