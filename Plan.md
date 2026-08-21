@@ -1,5 +1,13 @@
 Plan.md
 
+### Master TODO: 
+
+1. Get beginning sprites
+2. Render said sprites
+3. Basic terrain generation
+4. ...
+
+
 ### Code structure
 
 ```
