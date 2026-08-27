@@ -1,0 +1,162 @@
+pragma solidity ^0.8.35;
+
+contract TimedEvents {
+// timed events are special, because sometimes there are bell curves that need to be dealt with and sometimes things are strictly linear
+
+
+    enum TimedEvent {
+        REDPLANT_GROWTH,
+        REDPLANT_FRUIT_START,
+        REDPLANT_FRUIT_GROWTH
+    }
+
+
+    // Each timed event has an array of these, to allow for some events having a greater chance as time goes on
+    struct ChancesElement {
+        uint age, //measured in epochs, since the action was created
+        uint probability, //measured as "some hash must be greater than this"
+    }
+
+    struct Event {
+        uint eventType, 
+        uint eventUid,
+        uint x,     //x coordinate on island, optional
+        uint y,     //y coordinate on island, optional
+        uint initEpoch,  //epoch this event spawned in
+        uint tokenId
+    }
+
+    // Stores a finite array indicating odds as a stairstep function. Note that these are the odds per epoch
+    // Probability(numEpochs) =  1 - (1 - chances)^numEpochs
+    mapping(uint timedEvent => ChancesElement[]) Chances;
+
+    mapping(uint tokenId => Event[]) TerrainEventsCache;    //This is a cache so that we don't have to scan every square of an island
+                                                            // we can do away with this in favor of more efficient processing as things evolve. 
+                                                            // Do not use this structure outside of TimedEvents to prevent it from becoming load bearing
+
+    uint EVENT_UID_COUNTER = 0; //can never decrease, gets incremented every time a new event is added
+
+
+    // Scans a tokenId's world map (and potentially other sources) to create a list of timed events to execute
+    function _scanForTimedEvents(tokenId) internal returns(Event[])
+    {
+        return _getTerrainEvents(tokenId); 
+    }
+
+    // returns the terrain related timed events that occur
+    function _getTerrainEvents(uint tokenId) internal returns(Event[])
+    {
+        return TerrainEvents[tokenId];
+    }
+
+    // @dev Needs `initEpoch` specified because these are per-token and may not correspond to the current game latest epoch
+    // TODO consider adding an "old event uid" thing for events. But then i think nah, just delete old ones as you create new ones if necessary
+    function _addTerrainEvent(uint tokenId, uint eventType, uint x, uint y, uint initEpoch) internal returns(uint index)
+    {
+        Event thisEvent = new Event;
+        thisEvent.eventType = eventType;
+        thisEvent.x = x;
+        thisEvent.y = y;
+        thisEvent.initEpoch = initEpoch; 
+        thisEvent.eventUid = EVENT_UID_COUNTER++;
+        thisEvent.tokenId = tokenId;
+
+        // TODO: consider adding reverse-lookup eventUid --> tokenId
+        TerrainEvents[tokenId].push(thisEvent); //Adds event to the list
+        emit TerrainEventAdded(tokenId, thisEvent.eventUid);
+    } 
+
+    function _doTimedEvents(Event[] events)
+    {
+        Effects[] timedEventEffects = new Effects[];
+
+
+        for(i = 0; i < events.length; i++)
+        {
+            bool happened = _eventRoll(events[i].eventType, events[i].initEpoch);
+            if(happened)
+            {
+               timedEventEffects.push( _processEvent(events[i]));
+            }
+        }
+
+        return timedEventEffects;
+    }
+
+    function _eventRoll(uint eventType, uint initEpoch) returns (bool)
+    {
+        return rollRand() < getChances(eventType, tokenEpoch - initEpoch);
+    }
+
+    function _processEvent(Event thisEvent) returns (Effects[] effects memory)
+    {
+        if(thisEvent.eventType == REDPLANT_GROWTH)
+        {
+            // get x,y of the event, find redplant stage, then update redplant to the next stage
+            // note: there are 7 redplant stages
+                // create effect of "change tile to X"
+            // if redplant has reached the final stage, then add effect of changing this tile to redp
+                // create effect of "remove terrain event" and "add terrain event" for redplant fruit start
+            
+            // TODO AUDIT: consider making a getter for the tile type
+            if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] >= REDPLANT_0 && tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] < REDPLANT_6) // This does NOT include REPLANT_6
+            {
+                Effect setNextStage = new Effect;
+                setNextStage.type = SET_TILE;
+                setNextStage.x = thisEvent.x;
+                setNextStage.y = thisEvent.y;
+                setNextStage.val = tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y]+1;
+
+                effects.push(setNextStage);
+            }
+            else if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] == REDPLANT_6)
+            {
+                Effect setNextStage = new Effect;
+                setNextStage.type = SET_TILE;
+                setNextStage.x = thisEvent.x;
+                setNextStage.y = thisEvent.y;
+                setNextStage.val = REDPLANT_FRUIT_0;
+
+                Effect deleteOldEvent = new Effect;
+                deleteOldEvent.type = DEL_EVENT;
+                deleteOldEvent.eventUid = thisEvent.eventUid;
+
+                Effect createNewEvent = new Effect;
+                createNewEvent.type = NEW_EVENT;
+                createNewEvent.x = thisEvent.x;
+                createNewEvent.y = thisEvent.y;
+                createNewEvent.tokenId = thisEvent.tokenId;
+                createNewEvent.val = REDPLANT_FRUIT_START;
+
+                effects.push(setNextStage);
+                effects.push(deleteOldEvent);
+                effects.push(createNewEvent);
+            }
+            else
+            {
+                revert("_processEvent: impossible tile type for event");
+            }
+
+
+        }
+        else if(thisEvent.eventType == REDPLANT_FRUIT_START)
+        {
+            // get x,y of event, then update redplant to next stage
+                // create effect of change tile to redplant-fruit-stage++
+            // if redplant fruit
+            uint tileType = _getTileType(thisEvent);
+        }
+        else if(thisEvent.eventType == REDPLANT_FRUIT_GROWTH)
+        {
+
+        }
+        else revert("thisEvent.eventType does not exist");
+
+    }
+
+
+    function _getTileType(Event thisEvent) returns (uint tileType) 
+    {
+        return tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y]
+    }
+}
