@@ -51,3 +51,10 @@ function computeOffset(row, col, height = 0) {
     y: 200 + (col * 24) + (row * 24) - (height * 48)
   };
 }
+window.buffer.push([
+  { x: 1000, y: 400, src: 'OrangeDoggy-idle-lightoutline.gif' }
+]);
+
+window.buffer.push([ 
+    { x: 1050, y: 500, src: 'redplant-lifecycle-unframed-debug.gif'}
+]);
