@@ -92,14 +92,17 @@ contract LandNFT is
 
     function _attemptUpdateToEpoch(tokenId, finalEpoch)
     {
-        // this is for the very end of the update round, all changes to be made due to rolls and such
-        Effects[] effects = new Effects[];
+
 
         for(i = IslandDatum[tokenId].lastEpoch + 1; i <= finalEpoch; i++)
         {
+            // this is for the very end of the update round, all changes to be made due to rolls and such
+            Effects[] effects = new Effects[];
+            
             // do random events
             // do chanceTimed occurrences
             Event[] timedEvents = _scanForTimedEvents(tokenId);
+            effectsFromTimed = _doTimedEvents()
             // do timed occurrences (things like decay or non-infinite effects... tbh this might be ok to remove)
             // do queued user actions
 

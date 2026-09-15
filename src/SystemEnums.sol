@@ -7,7 +7,7 @@ enum TileTypes {
     REDPLANT_4,
     REDPLANT_5,
     REDPLANT_6, // There are 7 redplants before fruit sprouts
-    REDPLANT_FRUIT_0,
+    REDPLANT_FRUIT_0,   // this is the UNSTARTED phase
     REDPLANT_FRUIT_1,
     REDPLANT_FRUIT_2,
     REDPLANT_FRUIT_3,
@@ -27,4 +27,4 @@ enum TimedEvent {
         REDPLANT_GROWTH,
         REDPLANT_FRUIT_START,
         REDPLANT_FRUIT_GROWTH
- }
+}
