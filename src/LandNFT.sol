@@ -102,7 +102,7 @@ contract LandNFT is
             // do random events
             // do chanceTimed occurrences
             Event[] timedEvents = _scanForTimedEvents(tokenId);
-            effectsFromTimed = _doTimedEvents()
+            effectsFromTimed = _doTimedEvents();
             // do timed occurrences (things like decay or non-infinite effects... tbh this might be ok to remove)
             // do queued user actions
 

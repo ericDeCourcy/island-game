@@ -1,21 +1,10 @@
 pragma solidity ^0.8.35;
 
-contract TimedEvents {
-// timed events are special, because sometimes there are bell curves that need to be dealt with and sometimes things are strictly linear
+contract TimedEvents is TimedEventsData {
+// timed events are special, because for some events there are bell curves that need to be dealt with and sometimes things are strictly linear
 
 
-    enum TimedEvent {
-        REDPLANT_GROWTH,
-        REDPLANT_FRUIT_START,
-        REDPLANT_FRUIT_GROWTH
-    }
 
-
-    // Each timed event has an array of these, to allow for some events having a greater chance as time goes on
-    struct ChancesElement {
-        uint age; //measured in epochs, since the action was created
-        uint probability; //measured as "some hash must be greater than this"
-    }
 
     struct Event {
         uint eventType; 
@@ -185,7 +174,7 @@ contract TimedEvents {
             if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] == REDPLANT_FRUIT_11)
             {
                 Effect deleteOldEvent = new Effect;
-                deleteOldEvent.type = DEL_EVENT;
+                deleteOldEvent.eventType = DEL_EVENT;
                 deleteOldEvent.eventUid = thisEvent.eventUid;
                 effects.push(deleteOldEvent);
             }

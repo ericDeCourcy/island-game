@@ -2,8 +2,8 @@ pragma solidity ^0.8.35;
 
 contract EpochManager {
 
-    uint constant START_TIME;
-    uint constant EPOCH_LENGTH;
+    uint immutable START_TIME;
+    uint immutable EPOCH_LENGTH;
 
     uint CURRENT_GAME_EPOCH = 0;
 

@@ -22,3 +22,4 @@ Lakes, lagoons, water
 
 May need to scale time window to handle all active players getting updates
 
+buy tradeable assets in the clearspace from other players OR allow them to "buy from the game" with zama or some ish

@@ -17,11 +17,11 @@ contract WorldState {
     }
 
 
-    public mapping(uint => World) worlds;
-    public uint numWorlds;
+    mapping(uint => World) public worlds;
+    uint public numWorlds;
 
-    public mapping(uint => Entity) entities;
-    public uint numEntities;
+    mapping(uint => Entity) public entities;
+    uint public numEntities;
 
     function getTerrainElement(uint worldId, uint x, uint y) external view returns (uint) {
         require(worlds[worldId].exists, "WorldState: worldId does not exist");

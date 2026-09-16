@@ -1,4 +1,4 @@
-contract QueueProcessor {
+contract QueueProcessor is OwnableUpgradeable {
     
     enum QueueStatus {
         NOT_READY,  //not enough time has passed to start this
@@ -13,7 +13,7 @@ contract QueueProcessor {
 
     uint public currentlyStaged;
     uint public stagedTime;
-    uint public currentSeed;
+    uint public currentSeed;    //TODO: Consider changing to SEED because its a global var
     uint public partialProgress;
     uint public lastStaged; // we can call non-existent queues "staged"
 
@@ -55,9 +55,21 @@ contract QueueProcessor {
 
     }
 
-    function _rollSeed() return (bytes32 newRand)
+    function _rollSeed() internal returns(bytes32)
     {
         return currentSeed = keccak(currentSeed);
+    }
+
+    // Why did i call it spice? Idk. Loosen up, mannn
+    function _getSpice() internal view returns(bytes32)
+    {
+        return IRandomOracle(RAND_ORACLE).getRandomness();
+    }
+
+    function applyRandomness() external returns(bytes32)
+    {
+        return currentSeed = keccak(abi.encode(currentSeed, _getSpice()));
+
     }
 
 
@@ -96,7 +108,11 @@ contract QueueProcessor {
 
     }
 
-    function _doTerrainUpdates(worldId) internal
+
+    // Terrain updates are occasional changes to the landscape that can just happen sometimes. 
+    // They are not the same as Timed Events, which happen after some delay for something
+    // like plant growth.
+    function _doTerrainUpdates(worldId) internal returns(mapping(uint => bool) updated)
     {
         mapping(uint => bool) updated;
 
@@ -104,8 +120,8 @@ contract QueueProcessor {
         {
 
             _rollSeed();
-            uint x = currentSeed % 32;
-            uint y = (currentSeed / 32)%32;
+            uint x = uint(currentSeed) % 32;
+            uint y = (uint(currentSeed) / 32)%32;
 
             if(updated[x + (y*32)])
             {
@@ -119,7 +135,7 @@ contract QueueProcessor {
         }
     }
 
-    function _updateSpace(worldId)
+    function _updateSpace(uint worldId,uint x, uint y)
     {
         _rollSeed();
 

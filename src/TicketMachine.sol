@@ -1,7 +1,5 @@
 pragma solidity ^0.8.35;
 
-// ticket redemption functions
-// is ERC721
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -10,6 +8,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "./IWETH9.sol";
 
+// TicketMachine mints tickets, which can then mint islands.
+// TODO make it so tickets have versions? No earlier than X for example?
 contract TicketMachine is ERC20BurnableUpgradeable, ReentrancyGuard, OwnableUpgradeable{
 
     uint public lastPrice;
