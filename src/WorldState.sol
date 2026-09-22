@@ -1,4 +1,4 @@
-contract WorldState {
+contract WorldState is QueueProcessor{
     
     // state of player worlds
     struct World{

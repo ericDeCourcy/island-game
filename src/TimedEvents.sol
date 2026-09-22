@@ -1,8 +1,10 @@
 pragma solidity ^0.8.35;
 
+
+// Timed events are things like plants growing and shit
 contract TimedEvents is TimedEventsData {
 // timed events are special, because for some events there are bell curves that need to be dealt with and sometimes things are strictly linear
-
+// TODO what does this mean? 9/19/26
 
 
 
@@ -186,6 +188,6 @@ contract TimedEvents is TimedEventsData {
 
     function _getTileType(Event thisEvent) returns (uint tileType) 
     {
-        return tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y]
+        return tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y];
     }
 }

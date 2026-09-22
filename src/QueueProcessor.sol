@@ -1,4 +1,12 @@
-contract QueueProcessor is OwnableUpgradeable {
+pragma solidity ^0.8.35;
+
+import "./QueueDispatcher.sol";
+import "./QueueStorage.sol";
+import "./TimedEvents.sol";
+import "./RandomEvents.sol";
+import "./UserActions.sol";
+
+contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEvents, UserActions, Updater, OwnableUpgradeable {
     
     enum QueueStatus {
         NOT_READY,  //not enough time has passed to start this
@@ -16,6 +24,11 @@ contract QueueProcessor is OwnableUpgradeable {
     uint public currentSeed;    //TODO: Consider changing to SEED because its a global var
     uint public partialProgress;
     uint public lastStaged; // we can call non-existent queues "staged"
+
+    constructor(address _randOracle)
+    {
+        RAND_ORACLE = _randOracle;
+    }
 
     // TODO: make it possible to process fixed number of queues?
     function stageQueue(uint queueId) public returns(bool success)
@@ -143,12 +156,14 @@ contract QueueProcessor is OwnableUpgradeable {
         // update by type
         uint spaceType = _getType(x,y,worldId);
         
+        /*
         switch spaceType
         {
             case(TE_PLANT):
             case(TE_WATER):
             case(TE_ROCKS):
         }
+        */  //TODO fill this out and chang away from switch case
 
     }
 
