@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20Burnable
 
 import "./TicketMachine.sol";
 import "./EpochManager.sol";
-import "./WorldState.sol";
+import "./QueueProcessor.sol";
 
 contract LandNFT is 
     Initializable, 
@@ -16,7 +16,7 @@ contract LandNFT is
     OwnableUpgradeable, 
     ReentrancyGuard,
     EpochManager,
-    WorldState {
+    QueueProcessor {
 
     ERC20BurnableUpgradeable ticketMachine;
 
@@ -80,20 +80,21 @@ contract LandNFT is
         _attemptUpdateToEpoch(tokenId, finalEpoch);
     }
 
-    function queueAction(uint tokenId, uint action, bytes32 aux)
+    //TODO is this for user actions only? If so, consider updating the name here to "queueUserAction"
+    function queueAction(uint tokenId, uint action, bytes32 aux) public //TODO nonreentrant?
     {
         require(_canQueueActions(tokenId, msg.sender), "queueAction: msg.sender cannot queue actions for this tokenId");
         return _queueActionInEpoch(tokenId, action, IslandDatum[tokenId].lastEpoch + 1);
     }
 
-    function queueActionInEpoch(uint tokenId, uint action, bytes32 aux, uint epoch)
+    function queueActionInEpoch(uint tokenId, uint action, bytes32 aux, uint epoch) public  //TODO nonreentrant?
     {
         require(_canQueueActions(tokenId, msg.sender), "queueActionInEpoch: msg.sender cannot queue actions for this tokenId");
         require(epoch > lastEpoch[tokenId], "queueActionInEpoch: specified epoch has already passed");
         return _queueActionInEpoch(tokenId, action, epoch);
     }
 
-    function _attemptUpdateToEpoch(tokenId, finalEpoch)
+    function _attemptUpdateToEpoch(tokenId, finalEpoch) internal
     {
 
 

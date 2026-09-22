@@ -1,8 +1,11 @@
 pragma solidity ^0.8.35;
 
-contract QueueDispatcher {  
+import "./WorldState.sol";
+import "./QueueStorage.sol";
 
-    function addToQueue(uint worldId) public worldExists(worldId) returns(uint batch) //returns 0 if not added to a batch at all
+contract QueueDispatcher is WorldState, QueueStorage{  
+
+    function addToQueue(uint worldId) public onlyIfWorldExists(worldId) returns(uint batch) //returns 0 if not added to a batch at all
     {
         require(block.timestamp - lastUpdate[worldId] > QUEUE_ADD_DELAY, "QueueDispatcher: World cannot be added to queue yet");
         require(_inQueue(worldId) == 0, "QueueDispatcher: World is already in a queue");
@@ -31,11 +34,11 @@ contract QueueDispatcher {
     //
     function _addToCurrentQueue(uint worldId) returns (bool success, uint queueNumber)
     {
-        currentQueue = block.timestamp / QUEUE_EPOCH;
-        currentlength = queueLengths[currentQueue];
+        uint currentQueue = block.timestamp / QUEUE_EPOCH;
+        uint currentlength = queueLengths[currentQueue];
         require(currentlength < MAX_QUEUE_LENGTH, "QueueDispatcher: Cannot exceed max queue length");
         queues[currentQueue][currentlength];
-        queueLengths++; 
+        queueLengths[currentQueue]++; 
     }
     //////////////////////////////
 

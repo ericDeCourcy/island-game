@@ -127,9 +127,9 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
     // Terrain updates are occasional changes to the landscape that can just happen sometimes. 
     // They are not the same as Timed Events, which happen after some delay for something
     // like plant growth.
+    // TODO: Consider returning an array instead of a mapping, i'm not sure how mapping returns work 9/21
     function _doTerrainUpdates(worldId) internal returns(mapping(uint => bool) updated)
     {
-        mapping(uint => bool) updated;
 
         for(i =  0; i < NUM_WORLD_UPDATES; i++)
         {
