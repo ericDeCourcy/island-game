@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20Burnable
 
 import "./TicketMachine.sol";
 import "./EpochManager.sol";
-import "./QueueProcessor.sol";
+import "./WorldState.sol";
 
 contract LandNFT is 
     Initializable, 
@@ -16,7 +16,7 @@ contract LandNFT is
     OwnableUpgradeable, 
     ReentrancyGuard,
     EpochManager,
-    QueueProcessor {
+    WorldState {
 
     ERC20BurnableUpgradeable ticketMachine;
 
