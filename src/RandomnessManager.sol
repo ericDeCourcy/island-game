@@ -1,6 +1,17 @@
 pragma solidity ^0.8.35;
 
+import "./interfaces/IRandomOracle.sol";
+
 contract RandomnessManager {
+
+    bytes32 currentSeed;
+    address immutable RAND_ORACLE;
+
+    constructor(bytes32 _initialSeed, address _randomOracle) 
+    {
+        currentSeed = _initialSeed;
+        RAND_ORACLE = _randomOracle;
+    }
 
     function rollRand() internal returns(bytes32)
     {
@@ -9,7 +20,7 @@ contract RandomnessManager {
 
     function _rollSeed() internal returns(bytes32)
     {
-        return currentSeed = keccak(currentSeed);
+        return currentSeed = keccak256(currentSeed);
     }
 
     // Why did i call it spice? Idk. Loosen up, mannn
@@ -21,7 +32,7 @@ contract RandomnessManager {
     // incorporates current random oracle reading into seed
     function applySpice() external returns(bytes32)
     {
-        return currentSeed = keccak(abi.encode(currentSeed, _getSpice()));
+        return currentSeed = keccak256(abi.encode(currentSeed, _getSpice()));
         //TODO: make it applicable exactly once per update/block
     }
 

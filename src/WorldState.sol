@@ -13,7 +13,7 @@ contract WorldState is SystemEnums {
         uint numEntities;
         bool exists;
         uint creationEpoch;
-        uint lastUpdatedEpoch;
+        uint lastUpdatedEpoch;  //TODO consider changing name to "last processed" epoch to be more consistent
     }
 
     struct Entity{  //TODO what are entities? How do we handle entities which inhabit worlds?

@@ -1,14 +1,13 @@
 pragma solidity ^0.8.35;
 
 import "./QueueDispatcher.sol";
-import "./QueueStorage.sol";
 import "./TimedEvents.sol";
 import "./RandomEvents.sol";
 import "./UserActions.sol";
 import "./Updater.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEvents, UserActions, Updater, OwnableUpgradeable {
+contract QueueProcessor is QueueDispatcher, TimedEvents, RandomEvents, UserActions, Updater, OwnableUpgradeable {
     
     enum QueueStatus {
         NOT_READY,  //not enough time has passed to start this
@@ -21,15 +20,20 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
 
     mapping(uint => QueueStatus) queueStatuses;
 
+    uint immutable NUM_WORLD_UPDATES;
+
     uint public currentlyStaged;
     uint public stagedTime;
     uint public currentSeed;    //TODO: Consider changing to SEED because its a global var
     uint public partialProgress;
     uint public lastStaged; // we can call non-existent queues "staged"
+    
+    event QueueStaged(uint indexed queueId);
 
-    constructor(address _randOracle)
+    constructor(address _randOracle, uint _numWorldUpdates)
     {
         RAND_ORACLE = _randOracle;
+        NUM_WORLD_UPDATES = _numWorldUpdates;
     }
 
     // TODO: make it possible to process fixed number of queues?
@@ -57,8 +61,11 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
 
         // do that one
 
-        _doTerrainUpdates(worldId);
-        _doWorldUpdates(worldId);
+        // TODO: Get worldId from the queue somehow
+        // _doTerrainUpdates(worldId);
+  
+  
+        //  _doWorldUpdates(worldId); //TODO: diff between terrain and world updates?
 
         //ensure that enough time has passed for sufficient randomness when pulling random oracle
         // 1. get world
@@ -72,7 +79,7 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
 
 
 
-    function _isNextQueue(queueId) public returns(bool)
+    function _isNextQueue(uint queueId) public returns(bool)
     {
         // if anything staged now, abort
         if(currentlyStaged != 0)
@@ -110,10 +117,10 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
     // They are not the same as Timed Events, which happen after some delay for something
     // like plant growth.
     // TODO: Consider returning an array instead of a mapping, i'm not sure how mapping returns work 9/21
-    function _doTerrainUpdates(worldId) internal returns(mapping(uint => bool) updated)
+    function _doTerrainUpdates(uint worldId) internal returns(mapping(uint => bool) updated)
     {
 
-        for(i =  0; i < NUM_WORLD_UPDATES; i++)
+        for(uint i =  0; i < NUM_WORLD_UPDATES; i++)
         {
 
             _rollSeed();
@@ -132,13 +139,18 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
         }
     }
 
+    // For a given space, this will perform an "update" to said space based on what it is
+    // Not every space gets updated every epoch, so this is a random chance
+    // TODO where do the random chance rolls occur? Don't we want to use the "chances" setup we already have?
     function _updateSpace(uint worldId,uint x, uint y) internal
     {
         _rollSeed();
 
         // get type 
         // update by type
-        uint spaceType = _getType(x,y,worldId);
+        uint spaceType = _getType(worldId, x,y);
+
+
         
         /*
         switch spaceType
@@ -149,6 +161,11 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
         }
         */  //TODO fill this out and change away from switch case
 
+    }
+
+    function _getType(uint worldId, uint x, uint y)
+    {
+        return worlds[worldId].terrain[x][y];
     }
 
 }

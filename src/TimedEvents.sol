@@ -1,24 +1,17 @@
 pragma solidity ^0.8.35;
 
 import "./TimedEventsData.sol";
-import "./WorldState.sol";
+import "./QueueStorage.sol";    //TODO not so sure about having this inherit from the queueStorage file
 import "./RandomnessManager.sol";
 
 // Timed events are things like plants growing and shit
-contract TimedEvents is TimedEventsData, WorldState, RandomnessManager {
+contract TimedEvents is TimedEventsData, QueueStorage, RandomnessManager {
 // timed events are special, because for some events there are bell curves that need to be dealt with and sometimes things are strictly linear
 // TODO what does this mean? 9/19/26
 
 
 
-    struct Event {
-        uint eventType; 
-        uint eventUid;
-        uint x;     //x coordinate on island, optional
-        uint y;     //y coordinate on island, optional
-        uint initEpoch;  //epoch this event spawned in
-        uint tokenId;
-    }
+
 
     // Stores a finite array indicating odds as a stairstep function. Note that these are the odds per epoch
     // Probability(numEpochs) =  1 - (1 - chances)^numEpochs
@@ -29,6 +22,8 @@ contract TimedEvents is TimedEventsData, WorldState, RandomnessManager {
                                                             // Do not use this structure outside of TimedEvents to prevent it from becoming load bearing
 
     uint EVENT_UID_COUNTER = 0; //can never decrease, gets incremented every time a new event is added
+
+    event TerrainEventAdded(uint tokenId, uint eventUid);
 
 
     // Scans a tokenId's world map (and potentially other sources) to create a list of timed events to execute
@@ -65,7 +60,7 @@ contract TimedEvents is TimedEventsData, WorldState, RandomnessManager {
         Effect[] timedEventEffects = new Effect[];
 
 
-        for(i = 0; i < events.length; i++)
+        for(uint i = 0; i < events.length; i++)
         {
             bool happened = _eventRoll(events[i].eventType, events[i].initEpoch);
             if(happened)
@@ -77,9 +72,13 @@ contract TimedEvents is TimedEventsData, WorldState, RandomnessManager {
         return timedEventEffects;
     }
 
-    function _eventRoll(uint eventType, uint initEpoch) returns (bool)
+    // @dev Input `processingEpoch` is the Epoch for which we are currently processing, NOT
+    //      the current epoch as determined by block.timestamp. This is imporant because we have to
+    //      process epochs sequentially for a world, potentially with a backlog
+    //      so we would try this chance for each epoch that has passed up until the "current" one 
+    function _eventRoll(uint eventType, uint processingEpoch, uint initEpoch) returns (bool)
     {
-        return rollRand() < getChances(eventType, tokenEpoch - initEpoch);
+        return rollRand() < getChances(eventType, processingEpoch - initEpoch);
     }
 
     function _processEvent(Event thisEvent) internal returns (Effect[] effects)
