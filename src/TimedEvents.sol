@@ -1,5 +1,7 @@
 pragma solidity ^0.8.35;
 
+import "./TimedEventsData.sol";
+
 
 // Timed events are things like plants growing and shit
 contract TimedEvents is TimedEventsData {

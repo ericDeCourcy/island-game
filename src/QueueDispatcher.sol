@@ -1,3 +1,5 @@
+pragma solidity ^0.8.35;
+
 contract QueueDispatcher {  
 
     function addToQueue(uint worldId) public worldExists(worldId) returns(uint batch) //returns 0 if not added to a batch at all
