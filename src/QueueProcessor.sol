@@ -150,7 +150,7 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
         }
     }
 
-    function _updateSpace(uint worldId,uint x, uint y)
+    function _updateSpace(uint worldId,uint x, uint y) internal
     {
         _rollSeed();
 
@@ -165,7 +165,7 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
             case(TE_WATER):
             case(TE_ROCKS):
         }
-        */  //TODO fill this out and chang away from switch case
+        */  //TODO fill this out and change away from switch case
 
     }
 

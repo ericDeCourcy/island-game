@@ -1,10 +1,10 @@
 pragma solidity ^0.8.35;
 
 import "./TimedEventsData.sol";
-
+import "./WorldState.sol";
 
 // Timed events are things like plants growing and shit
-contract TimedEvents is TimedEventsData {
+contract TimedEvents is TimedEventsData, WorldState {
 // timed events are special, because for some events there are bell curves that need to be dealt with and sometimes things are strictly linear
 // TODO what does this mean? 9/19/26
 
@@ -31,7 +31,7 @@ contract TimedEvents is TimedEventsData {
 
 
     // Scans a tokenId's world map (and potentially other sources) to create a list of timed events to execute
-    function _scanForTimedEvents(tokenId) internal returns(Event[])
+    function _scanForTimedEvents(uint tokenId) internal returns(Event[])
     {
         return _getTerrainEvents(tokenId); 
     }
@@ -61,7 +61,7 @@ contract TimedEvents is TimedEventsData {
 
     function _doTimedEvents(Event[] events)
     {
-        Effects[] timedEventEffects = new Effects[];
+        Effect[] timedEventEffects = new Effect[];
 
 
         for(i = 0; i < events.length; i++)
@@ -81,7 +81,7 @@ contract TimedEvents is TimedEventsData {
         return rollRand() < getChances(eventType, tokenEpoch - initEpoch);
     }
 
-    function _processEvent(Event thisEvent) returns (Effects[] effects)
+    function _processEvent(Event thisEvent) internal returns (Effect[] effects)
     {
         if(thisEvent.eventType == REDPLANT_GROWTH)
         {
@@ -92,17 +92,17 @@ contract TimedEvents is TimedEventsData {
                 // create effect of "remove terrain event" and "add terrain event" for redplant fruit start
             
             // TODO AUDIT: consider making a getter for the tile type
-            if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] >= REDPLANT_0 && tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] < REDPLANT_6) // This does NOT include REPLANT_6
+            if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] >= REDPLANT_0 && worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] < REDPLANT_6) // This does NOT include REPLANT_6
             {
                 Effect setNextTile = new Effect;
                 setNextTile.tileType = SET_TILE;
                 setNextTile.x = thisEvent.x;
                 setNextTile.y = thisEvent.y;
-                setNextTile.val = tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y]+1;
+                setNextTile.val = worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y]+1;
 
                 effects.push(setNextTile);
             }
-            else if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] == REDPLANT_6)
+            else if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] == REDPLANT_6)
             {
                 Effect setNextTile = new Effect;
                 setNextTile.tileType = SET_TILE;
@@ -169,13 +169,13 @@ contract TimedEvents is TimedEventsData {
             setNextTile.tileType = SET_TILE;
             setNextTile.x = thisEvent.x;
             setNextTile.y = thisEvent.y;
-            setNextTile.val = tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] + 1;
+            setNextTile.val = worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] + 1;
 
             // don't create new event, event is same or deleted
  
 
             effects.push(setNextTile);
-            if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] == REDPLANT_FRUIT_11)
+            if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] == REDPLANT_FRUIT_11)
             {
                 Effect deleteOldEvent = new Effect;
                 deleteOldEvent.eventType = DEL_EVENT;
@@ -190,6 +190,6 @@ contract TimedEvents is TimedEventsData {
 
     function _getTileType(Event thisEvent) returns (uint tileType) 
     {
-        return tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y];
+        return worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y];
     }
 }

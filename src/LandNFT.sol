@@ -20,17 +20,7 @@ contract LandNFT is
 
     ERC20BurnableUpgradeable ticketMachine;
 
-    struct IslandData {
-        // TODO 
-        // mapping of x,y
-        // Terrain data
-        // age
-        // npcs
-        // nonterrain objects (plants, buildings, etc)
-        // lastEpoch
-    }
 
-    mapping(uint tokenId => IslandData) IslandDatum;
 
     constructor() {
         _disableInitializers();     //Implementation should not be allowed to initialize
@@ -101,7 +91,7 @@ contract LandNFT is
         for(i = IslandDatum[tokenId].lastEpoch + 1; i <= finalEpoch; i++)
         {
             // this is for the very end of the update round, all changes to be made due to rolls and such
-            Effects[] effects = new Effects[];
+            Effect[] effects = new Effect[];
             
             // do random events
             // do chanceTimed occurrences

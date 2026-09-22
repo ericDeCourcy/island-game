@@ -12,7 +12,7 @@ contract TimedEventsData {
     }
 
     // TODO make sure this is getting called whenever the contract initializes
-    function initChances() initializer 
+    function initChances() // TODO initializer  9/21
     {
 
     }

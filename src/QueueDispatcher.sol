@@ -3,12 +3,30 @@ pragma solidity ^0.8.35;
 import "./WorldState.sol";
 import "./QueueStorage.sol";
 
-contract QueueDispatcher is WorldState, QueueStorage{  
+// TODO better name than "dispatcher"? What does this do?
+contract QueueDispatcher is WorldState, QueueStorage {  
+
+    uint immutable MAX_QUEUE_LENGTH;
+    uint immutable QUEUE_PERIOD;
+    uint immutable FIRST_QUEUE_TIME;
+    uint immutable QUEUE_ADD_DELAY;
+
+    event QueueDispatcherConstructed(uint maxQueueLength, uint queuePeriod, uint firstQueueTime, uint queueAddDelay);
+
+    constructor(uint _maxQueueLength, uint _queuePeriod, uint _firstQueueTime, uint _queueAddDelay)
+    {
+        MAX_QUEUE_LENGTH = _maxQueueLength;
+        QUEUE_PERIOD = _queuePeriod;
+        FIRST_QUEUE_TIME = _firstQueueTime;
+        QUEUE_ADD_DELAY = _queueAddDelay;
+
+        emit QueueDispatcherConstructed(MAX_QUEUE_LENGTH, QUEUE_PERIOD, FIRST_QUEUE_TIME, QUEUE_ADD_DELAY);
+    }
 
     function addToQueue(uint worldId) public onlyIfWorldExists(worldId) returns(uint batch) //returns 0 if not added to a batch at all
     {
-        require(block.timestamp - lastUpdate[worldId] > QUEUE_ADD_DELAY, "QueueDispatcher: World cannot be added to queue yet");
-        require(_inQueue(worldId) == 0, "QueueDispatcher: World is already in a queue");
+        require(block.timestamp - lastUpdate[worldId] > QUEUE_ADD_DELAY, "QueueDispatcher: World cannot be added to queue yet");    //TODO: 9/21/26 whats this... what does this prevent?
+        require(_inQueue(worldId) == 0, "QueueDispatcher: World is already in a queue");    //TODO: change default val for "not in queue" to uint(max)
         _addToCurrentQueue(worldId);
     }
 
@@ -29,12 +47,15 @@ contract QueueDispatcher is WorldState, QueueStorage{
     // For addToQueue //////////////
     function _inQueue(uint worldId) returns (uint queueNumber)
     {
-        return queueStatus[worldId];
+        return nextQueueEpoch[worldId];  // if nextQueue is zero then that means world isn't in queue
+            // TODO: change the default val for "not in queue" to be uint(max)
     }
+
+
     //
     function _addToCurrentQueue(uint worldId) returns (bool success, uint queueNumber)
     {
-        uint currentQueue = block.timestamp / QUEUE_EPOCH;
+        uint currentQueue = (block.timestamp - FIRST_QUEUE_TIME) / QUEUE_PERIOD;
         uint currentlength = queueLengths[currentQueue];
         require(currentlength < MAX_QUEUE_LENGTH, "QueueDispatcher: Cannot exceed max queue length");
         queues[currentQueue][currentlength];

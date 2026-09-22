@@ -8,8 +8,11 @@ contract WorldState {
     struct World{
         uint[32][32] terrain;
         mapping(uint => uint) entities;
+        mapping(uint x => mapping(uint y => uint)) objects; //plants, items, etc
         uint numEntities;
         bool exists;
+        uint creationEpoch;
+        uint lastUpdatedEpoch;
     }
 
     struct Entity{  //TODO what are entities? How do we handle entities which inhabit worlds?
@@ -20,12 +23,23 @@ contract WorldState {
         mapping(uint => uint) status;   //TODO: What are statuses? why are there multiple statuses?
     }
 
+    struct Effect{  //TODO minimize type sizes because we process lots of these
+        uint8 x;
+        uint8 y;
+        uint val;
+        uint tileType;
+        uint eventType;
+        uint eventUid;
+        uint tokenId;    //TODO should this just be id? what is this used for?
+    }
 
     mapping(uint => World) public worlds;
     uint public numWorlds;
 
     mapping(uint => Entity) public entities;
     uint public numEntities;
+
+    
 
     modifier onlyIfWorldExists(uint worldId) 
     {
