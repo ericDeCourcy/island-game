@@ -1,23 +1,17 @@
 pragma solidity ^0.8.35;
 
 import "./TimedEventsData.sol";
-import "./WorldState.sol";
+import "./QueueStorage.sol";    //TODO not so sure about having this inherit from the queueStorage file
+import "./RandomnessManager.sol";
 
 // Timed events are things like plants growing and shit
-contract TimedEvents is TimedEventsData, WorldState {
+contract TimedEvents is TimedEventsData, QueueStorage, RandomnessManager {
 // timed events are special, because for some events there are bell curves that need to be dealt with and sometimes things are strictly linear
 // TODO what does this mean? 9/19/26
 
 
 
-    struct Event {
-        uint eventType; 
-        uint eventUid;
-        uint x;     //x coordinate on island, optional
-        uint y;     //y coordinate on island, optional
-        uint initEpoch;  //epoch this event spawned in
-        uint tokenId;
-    }
+
 
     // Stores a finite array indicating odds as a stairstep function. Note that these are the odds per epoch
     // Probability(numEpochs) =  1 - (1 - chances)^numEpochs
@@ -28,6 +22,8 @@ contract TimedEvents is TimedEventsData, WorldState {
                                                             // Do not use this structure outside of TimedEvents to prevent it from becoming load bearing
 
     uint EVENT_UID_COUNTER = 0; //can never decrease, gets incremented every time a new event is added
+
+    event TerrainEventAdded(uint tokenId, uint eventUid);
 
 
     // Scans a tokenId's world map (and potentially other sources) to create a list of timed events to execute
@@ -64,7 +60,7 @@ contract TimedEvents is TimedEventsData, WorldState {
         Effect[] timedEventEffects = new Effect[];
 
 
-        for(i = 0; i < events.length; i++)
+        for(uint i = 0; i < events.length; i++)
         {
             bool happened = _eventRoll(events[i].eventType, events[i].initEpoch);
             if(happened)
@@ -76,14 +72,18 @@ contract TimedEvents is TimedEventsData, WorldState {
         return timedEventEffects;
     }
 
-    function _eventRoll(uint eventType, uint initEpoch) returns (bool)
+    // @dev Input `processingEpoch` is the Epoch for which we are currently processing, NOT
+    //      the current epoch as determined by block.timestamp. This is imporant because we have to
+    //      process epochs sequentially for a world, potentially with a backlog
+    //      so we would try this chance for each epoch that has passed up until the "current" one 
+    function _eventRoll(uint eventType, uint processingEpoch, uint initEpoch) returns (bool)
     {
-        return rollRand() < getChances(eventType, tokenEpoch - initEpoch);
+        return rollRand() < getChances(eventType, processingEpoch - initEpoch);
     }
 
     function _processEvent(Event thisEvent) internal returns (Effect[] effects)
     {
-        if(thisEvent.eventType == REDPLANT_GROWTH)
+        if(thisEvent.eventType == TimedEvent.REDPLANT_GROWTH)
         {
             // get x,y of the event, find redplant stage, then update redplant to the next stage
             // note: there are 7 redplant stages
@@ -92,34 +92,34 @@ contract TimedEvents is TimedEventsData, WorldState {
                 // create effect of "remove terrain event" and "add terrain event" for redplant fruit start
             
             // TODO AUDIT: consider making a getter for the tile type
-            if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] >= REDPLANT_0 && worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] < REDPLANT_6) // This does NOT include REPLANT_6
+            if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] >= TileType.REDPLANT_0 && worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] < TileType.REDPLANT_6) // This does NOT include REPLANT_6
             {
                 Effect setNextTile = new Effect;
-                setNextTile.tileType = SET_TILE;
+                setNextTile.tileType = EffectTileType.SET_TILE;
                 setNextTile.x = thisEvent.x;
                 setNextTile.y = thisEvent.y;
                 setNextTile.val = worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y]+1;
 
                 effects.push(setNextTile);
             }
-            else if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] == REDPLANT_6)
+            else if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] == TileType.REDPLANT_6)
             {
                 Effect setNextTile = new Effect;
-                setNextTile.tileType = SET_TILE;
+                setNextTile.tileType = EffectTileType.SET_TILE;
                 setNextTile.x = thisEvent.x;
                 setNextTile.y = thisEvent.y;
-                setNextTile.val = REDPLANT_FRUIT_0;
+                setNextTile.val = TileType.REDPLANT_FRUIT_0;
 
                 Effect deleteOldEvent = new Effect;
-                deleteOldEvent.eventType = DEL_EVENT;
+                deleteOldEvent.eventType = EffectEventType.DEL_EVENT;
                 deleteOldEvent.eventUid = thisEvent.eventUid;
 
                 Effect createNewEvent = new Effect; //TODO need better name than "event", perhaps something like roll or smth
-                createNewEvent.eventType = NEW_EVENT;
+                createNewEvent.eventType = EffectEventType.NEW_EVENT;
                 createNewEvent.x = thisEvent.x;
                 createNewEvent.y = thisEvent.y;
                 createNewEvent.tokenId = thisEvent.tokenId;
-                createNewEvent.val = REDPLANT_FRUIT_START;
+                createNewEvent.val = TimedEvent.REDPLANT_FRUIT_START;
 
                 effects.push(setNextTile);
                 effects.push(deleteOldEvent);
@@ -132,41 +132,41 @@ contract TimedEvents is TimedEventsData, WorldState {
 
 
         }
-        else if(thisEvent.eventType == REDPLANT_FRUIT_START)
+        else if(thisEvent.eventType == TimedEvent.REDPLANT_FRUIT_START)
         {
             // get x,y of event, then update redplant to next stage
                 // create effect of change tile to redplant-fruit-stage++
             // if redplant fruit
             uint tileType = _getTileType(thisEvent);
             
-            require(tileType == REDPLANT_FRUIT_0, "_processEvent: Event/tile mismatch: REDPLANT_FRUIT_START");
+            require(tileType == TileType.REDPLANT_FRUIT_0, "_processEvent: Event/tile mismatch: REDPLANT_FRUIT_START");
 
             Effect setNextTile = new Effect;
-            setNextTile.tileType = SET_TILE;
+            setNextTile.tileType = EffectTileType.SET_TILE;
             setNextTile.x = thisEvent.x;
             setNextTile.y = thisEvent.y;
-            setNextTile.val = REDPLANT_FRUIT_1;
+            setNextTile.val = TileType.REDPLANT_FRUIT_1;
 
             Effect deleteOldEvent = new Effect;
-            deleteOldEvent.eventType = DEL_EVENT;
+            deleteOldEvent.eventType = EffectEventType.DEL_EVENT;
             deleteOldEvent.eventUid = thisEvent.eventUid;
 
             Effect createNewEvent = new Effect; //TODO need better name than "event", perhaps something like roll or smth
-            createNewEvent.eventType = NEW_EVENT;
+            createNewEvent.eventType = EffectEventType.NEW_EVENT;
             createNewEvent.x = thisEvent.x;
             createNewEvent.y = thisEvent.y;
             createNewEvent.tokenId = thisEvent.tokenId;
-            createNewEvent.val = REDPLANT_FRUIT_GROWTH;
+            createNewEvent.val = TimedEvent.REDPLANT_FRUIT_GROWTH;
 
             effects.push(setNextTile);
             effects.push(deleteOldEvent);
             effects.push(createNewEvent);
         }
-        else if(thisEvent.eventType == REDPLANT_FRUIT_GROWTH)
+        else if(thisEvent.eventType == TimedEvent.REDPLANT_FRUIT_GROWTH)
         {
 
             Effect setNextTile = new Effect;
-            setNextTile.tileType = SET_TILE;
+            setNextTile.tileType = EffectTileType.SET_TILE;
             setNextTile.x = thisEvent.x;
             setNextTile.y = thisEvent.y;
             setNextTile.val = worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] + 1;
@@ -175,10 +175,10 @@ contract TimedEvents is TimedEventsData, WorldState {
  
 
             effects.push(setNextTile);
-            if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] == REDPLANT_FRUIT_11)
+            if(worlds[thisEvent.tokenId].objects[thisEvent.x][thisEvent.y] == TileType.REDPLANT_FRUIT_11)
             {
                 Effect deleteOldEvent = new Effect;
-                deleteOldEvent.eventType = DEL_EVENT;
+                deleteOldEvent.eventType = EffectEventType.DEL_EVENT;
                 deleteOldEvent.eventUid = thisEvent.eventUid;
                 effects.push(deleteOldEvent);
             }

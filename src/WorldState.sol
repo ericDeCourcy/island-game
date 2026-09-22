@@ -1,8 +1,9 @@
 pragma solidity ^0.8.35;
 
 import "./QueueProcessor.sol";
+import "./SystemEnums.sol";
 
-contract WorldState {
+contract WorldState is SystemEnums {
     
     // state of player worlds
     struct World{
@@ -12,7 +13,7 @@ contract WorldState {
         uint numEntities;
         bool exists;
         uint creationEpoch;
-        uint lastUpdatedEpoch;
+        uint lastUpdatedEpoch;  //TODO consider changing name to "last processed" epoch to be more consistent
     }
 
     struct Entity{  //TODO what are entities? How do we handle entities which inhabit worlds?
