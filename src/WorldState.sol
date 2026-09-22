@@ -1,8 +1,9 @@
 pragma solidity ^0.8.35;
 
 import "./QueueProcessor.sol";
+import "./SystemEnums.sol";
 
-contract WorldState {
+contract WorldState is SystemEnums {
     
     // state of player worlds
     struct World{

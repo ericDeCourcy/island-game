@@ -12,8 +12,15 @@ contract TimedEventsData {
     }
 
     // TODO make sure this is getting called whenever the contract initializes
-    function initChances() // TODO initializer  9/21
+    function initChances() // TODO incorporate `initializer`  9/21
     {
 
+    }
+
+    // TODO: this needs fixed, i don't like the idea of chances being spread out across 32 bytes
+    // TODO: right now this just returns 50% for everything
+    function getChances(uint, uint) returns (bytes32)
+    {
+        return bytes32(uint.max()/2);
     }
 }

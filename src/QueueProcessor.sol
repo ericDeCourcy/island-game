@@ -70,24 +70,6 @@ contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEve
 
     }
 
-    function _rollSeed() internal returns(bytes32)
-    {
-        return currentSeed = keccak(currentSeed);
-    }
-
-    // Why did i call it spice? Idk. Loosen up, mannn
-    function _getSpice() internal view returns(bytes32)
-    {
-        return IRandomOracle(RAND_ORACLE).getRandomness();
-    }
-
-    function applyRandomness() external returns(bytes32)
-    {
-        return currentSeed = keccak(abi.encode(currentSeed, _getSpice()));
-
-    }
-
-
 
 
     function _isNextQueue(queueId) public returns(bool)
