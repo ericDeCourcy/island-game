@@ -1,3 +1,5 @@
+pragma solidity ^0.8.35;
+
 // This file is dedicated to lookup tables for various chances
 
 contract TimedEventsData {

@@ -1,3 +1,7 @@
+pragma solidity ^0.8.35;
+
+import "./QueueProcessor.sol";
+
 contract WorldState is QueueProcessor{
     
     // state of player worlds

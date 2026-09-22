@@ -5,6 +5,8 @@ import "./QueueStorage.sol";
 import "./TimedEvents.sol";
 import "./RandomEvents.sol";
 import "./UserActions.sol";
+import "./Updater.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract QueueProcessor is QueueDispatcher, QueueStorage, TimedEvents, RandomEvents, UserActions, Updater, OwnableUpgradeable {
     

@@ -1,3 +1,5 @@
+pragma solidity ^0.8.35;
+
 enum TileTypes {
     DEFAULT_GRASS,
     REDPLANT_0,

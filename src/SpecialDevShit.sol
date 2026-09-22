@@ -1,6 +1,6 @@
 // This is NOT FOR PRODUCTION
 // These contracts assist with direct editing of game objects, for testing and whatnot
-pragma ^0.8.35;
+pragma solidity ^0.8.35;
 
 contract SpecialDevShit is MockRandomOracle{
 
