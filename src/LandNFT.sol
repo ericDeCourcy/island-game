@@ -7,13 +7,16 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 
 import "./TicketMachine.sol";
+import "./EpochManager.sol";
+import "./WorldState.sol";
 
 contract LandNFT is 
     Initializable, 
     ERC721EnumerableUpgradeable, 
     OwnableUpgradeable, 
     ReentrancyGuard,
-    EpochManager {
+    EpochManager,
+    WorldState {
 
     ERC20BurnableUpgradeable ticketMachine;
 
@@ -92,16 +95,23 @@ contract LandNFT is
 
     function _attemptUpdateToEpoch(tokenId, finalEpoch)
     {
-        // this is for the very end of the update round, all changes to be made due to rolls and such
-        Effects[] effects = new Effects[];
+
 
         for(i = IslandDatum[tokenId].lastEpoch + 1; i <= finalEpoch; i++)
         {
+            // this is for the very end of the update round, all changes to be made due to rolls and such
+            Effects[] effects = new Effects[];
+            
             // do random events
             // do chanceTimed occurrences
             Event[] timedEvents = _scanForTimedEvents(tokenId);
+            effectsFromTimed = _doTimedEvents();
             // do timed occurrences (things like decay or non-infinite effects... tbh this might be ok to remove)
             // do queued user actions
+
+            // TODO: might need to setup a "router" scheme for NFTs from different versions
+            //      This would mean all NFTs are stored here, WITH THIER VERSIONS, and the router would determine which 
+            //      QueueProcessor to call
 
 
         }

@@ -1,29 +1,22 @@
 pragma solidity ^0.8.35;
 
-contract TimedEvents {
-// timed events are special, because sometimes there are bell curves that need to be dealt with and sometimes things are strictly linear
+import "./TimedEventsData.sol";
 
 
-    enum TimedEvent {
-        REDPLANT_GROWTH,
-        REDPLANT_FRUIT_START,
-        REDPLANT_FRUIT_GROWTH
-    }
+// Timed events are things like plants growing and shit
+contract TimedEvents is TimedEventsData {
+// timed events are special, because for some events there are bell curves that need to be dealt with and sometimes things are strictly linear
+// TODO what does this mean? 9/19/26
 
 
-    // Each timed event has an array of these, to allow for some events having a greater chance as time goes on
-    struct ChancesElement {
-        uint age, //measured in epochs, since the action was created
-        uint probability, //measured as "some hash must be greater than this"
-    }
 
     struct Event {
-        uint eventType, 
-        uint eventUid,
-        uint x,     //x coordinate on island, optional
-        uint y,     //y coordinate on island, optional
-        uint initEpoch,  //epoch this event spawned in
-        uint tokenId
+        uint eventType; 
+        uint eventUid;
+        uint x;     //x coordinate on island, optional
+        uint y;     //y coordinate on island, optional
+        uint initEpoch;  //epoch this event spawned in
+        uint tokenId;
     }
 
     // Stores a finite array indicating odds as a stairstep function. Note that these are the odds per epoch
@@ -88,7 +81,7 @@ contract TimedEvents {
         return rollRand() < getChances(eventType, tokenEpoch - initEpoch);
     }
 
-    function _processEvent(Event thisEvent) returns (Effects[] effects memory)
+    function _processEvent(Event thisEvent) returns (Effects[] effects)
     {
         if(thisEvent.eventType == REDPLANT_GROWTH)
         {
@@ -101,34 +94,34 @@ contract TimedEvents {
             // TODO AUDIT: consider making a getter for the tile type
             if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] >= REDPLANT_0 && tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] < REDPLANT_6) // This does NOT include REPLANT_6
             {
-                Effect setNextStage = new Effect;
-                setNextStage.type = SET_TILE;
-                setNextStage.x = thisEvent.x;
-                setNextStage.y = thisEvent.y;
-                setNextStage.val = tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y]+1;
+                Effect setNextTile = new Effect;
+                setNextTile.tileType = SET_TILE;
+                setNextTile.x = thisEvent.x;
+                setNextTile.y = thisEvent.y;
+                setNextTile.val = tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y]+1;
 
-                effects.push(setNextStage);
+                effects.push(setNextTile);
             }
             else if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] == REDPLANT_6)
             {
-                Effect setNextStage = new Effect;
-                setNextStage.type = SET_TILE;
-                setNextStage.x = thisEvent.x;
-                setNextStage.y = thisEvent.y;
-                setNextStage.val = REDPLANT_FRUIT_0;
+                Effect setNextTile = new Effect;
+                setNextTile.tileType = SET_TILE;
+                setNextTile.x = thisEvent.x;
+                setNextTile.y = thisEvent.y;
+                setNextTile.val = REDPLANT_FRUIT_0;
 
                 Effect deleteOldEvent = new Effect;
-                deleteOldEvent.type = DEL_EVENT;
+                deleteOldEvent.eventType = DEL_EVENT;
                 deleteOldEvent.eventUid = thisEvent.eventUid;
 
-                Effect createNewEvent = new Effect;
-                createNewEvent.type = NEW_EVENT;
+                Effect createNewEvent = new Effect; //TODO need better name than "event", perhaps something like roll or smth
+                createNewEvent.eventType = NEW_EVENT;
                 createNewEvent.x = thisEvent.x;
                 createNewEvent.y = thisEvent.y;
                 createNewEvent.tokenId = thisEvent.tokenId;
                 createNewEvent.val = REDPLANT_FRUIT_START;
 
-                effects.push(setNextStage);
+                effects.push(setNextTile);
                 effects.push(deleteOldEvent);
                 effects.push(createNewEvent);
             }
@@ -145,10 +138,50 @@ contract TimedEvents {
                 // create effect of change tile to redplant-fruit-stage++
             // if redplant fruit
             uint tileType = _getTileType(thisEvent);
+            
+            require(tileType == REDPLANT_FRUIT_0, "_processEvent: Event/tile mismatch: REDPLANT_FRUIT_START");
+
+            Effect setNextTile = new Effect;
+            setNextTile.tileType = SET_TILE;
+            setNextTile.x = thisEvent.x;
+            setNextTile.y = thisEvent.y;
+            setNextTile.val = REDPLANT_FRUIT_1;
+
+            Effect deleteOldEvent = new Effect;
+            deleteOldEvent.eventType = DEL_EVENT;
+            deleteOldEvent.eventUid = thisEvent.eventUid;
+
+            Effect createNewEvent = new Effect; //TODO need better name than "event", perhaps something like roll or smth
+            createNewEvent.eventType = NEW_EVENT;
+            createNewEvent.x = thisEvent.x;
+            createNewEvent.y = thisEvent.y;
+            createNewEvent.tokenId = thisEvent.tokenId;
+            createNewEvent.val = REDPLANT_FRUIT_GROWTH;
+
+            effects.push(setNextTile);
+            effects.push(deleteOldEvent);
+            effects.push(createNewEvent);
         }
         else if(thisEvent.eventType == REDPLANT_FRUIT_GROWTH)
         {
 
+            Effect setNextTile = new Effect;
+            setNextTile.tileType = SET_TILE;
+            setNextTile.x = thisEvent.x;
+            setNextTile.y = thisEvent.y;
+            setNextTile.val = tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] + 1;
+
+            // don't create new event, event is same or deleted
+ 
+
+            effects.push(setNextTile);
+            if(tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y] == REDPLANT_FRUIT_11)
+            {
+                Effect deleteOldEvent = new Effect;
+                deleteOldEvent.eventType = DEL_EVENT;
+                deleteOldEvent.eventUid = thisEvent.eventUid;
+                effects.push(deleteOldEvent);
+            }
         }
         else revert("thisEvent.eventType does not exist");
 
@@ -157,6 +190,6 @@ contract TimedEvents {
 
     function _getTileType(Event thisEvent) returns (uint tileType) 
     {
-        return tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y]
+        return tokenDatum[thisEvent.tokenId].mapObjects[thisEvent.x][thisEvent.y];
     }
 }
